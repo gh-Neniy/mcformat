@@ -1,0 +1,49 @@
+#!/usr/bin/python3
+
+import sys
+
+TAB_SIZE = 2
+
+def Format(file_name: str) -> None:
+  with open(file_name, 'r+') as mcfile:
+    content = mcfile.read()
+    size = len(content)
+    new_content = []
+
+    tab_count = 0
+    in_str = False
+    for i in range(size):
+      if content[i] == '\"':
+        in_str ^= 1
+        new_content.append(content[i])
+        continue
+
+      if in_str:
+        new_content.append(content[i])
+        continue
+
+      if content[i] in ('[', '{') and i + 2 < size and content[i + 1:i + 3] != ' \\':
+        tab_count += 1
+        new_content.append(content[i] + ' \\\n' + ' ' * tab_count * TAB_SIZE)
+      elif content[i] in (']', '}') and (i + 2 >= size or content[i + 1:i + 3] != ' \\'):
+        tab_count -= 1
+        new_content.append(' \\\n' + ' ' * tab_count * TAB_SIZE + content[i])
+      elif content[i] == ',' and i + 1 < size and content[i + 1] != '\n':
+        new_content.append(', \\\n' + ' ' * tab_count * TAB_SIZE)
+      else:
+        new_content.append(content[i])
+
+    mcfile.seek(0)
+    mcfile.write(''.join(new_content))
+
+
+def main():
+  if len(sys.argv) != 2:
+    print("Invalid argument count.")
+    sys.exit(-1)
+
+  Format(sys.argv[1])
+
+
+if __name__ == "__main__":
+  main()
