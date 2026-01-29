@@ -18,7 +18,7 @@ def ToOriginal(content: str) -> str:
         balance += 1
       elif content[i] in (']', '}'):
         balance -= 1
-      elif content[i] in ('\\', '\n') or content[i] == ' ' and balance > 0:
+      elif content[i] == '\\' or content[i] in (' ', '\n') and balance > 0:
         continue
 
       new_content.append(content[i])

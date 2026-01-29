@@ -28,3 +28,8 @@ give @s book[ \
     } \
   ] \
 ]
+
+tellraw @a { \
+  "text":"Hello World", \
+  "color":"green" \
+}
