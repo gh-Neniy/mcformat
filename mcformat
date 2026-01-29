@@ -1,48 +1,98 @@
 #!/usr/bin/python3
 
 import sys
+import os
+
+def ToOriginal(content: str) -> str:
+  size = len(content)
+  new_content = []
+
+  balance = 0
+  in_str = False
+  for i in range(size):
+      if content[i] == '\"':
+        in_str ^= 1
+      elif in_str:
+        pass
+      elif content[i] in ('[', '{'):
+        balance += 1
+      elif content[i] in (']', '}'):
+        balance -= 1
+      elif content[i] in ('\\', '\n') or content[i] == ' ' and balance > 0:
+        continue
+
+      new_content.append(content[i])
+
+  return ''.join(''.join(new_content).split('minecraft:'))
+
 
 TAB_SIZE = 2
 
-def Format(file_name: str) -> None:
+def MainLogic(content: str) -> str:
+  size = len(content)
+  new_content = []
+
+  tab_count = 0
+  in_str = False
+  for i in range(size):
+    if content[i] == '\"':
+      in_str ^= 1
+      new_content.append(content[i])
+      continue
+
+    if in_str:
+      new_content.append(content[i])
+      continue
+
+    if content[i] in ('[', '{'):
+      tab_count += 1
+      new_content.append(f'{content[i]} \\\n{' ' * tab_count * TAB_SIZE}')
+    elif content[i] in (']', '}'):
+      tab_count -= 1
+      new_content.append(f' \\\n{' ' * tab_count * TAB_SIZE}{content[i]}')
+    elif content[i] == ',':
+      new_content.append(f'{content[i]} \\\n{' ' * tab_count * TAB_SIZE}')
+    else:
+      new_content.append(content[i])
+  
+  return ''.join(new_content)
+
+
+def Format(file_name: str, to_original: bool) -> None:
   with open(file_name, 'r+') as mcfile:
     content = mcfile.read()
-    size = len(content)
-    new_content = []
+    content = ToOriginal(content)
 
-    tab_count = 0
-    in_str = False
-    for i in range(size):
-      if content[i] == '\"':
-        in_str ^= 1
-        new_content.append(content[i])
-        continue
-
-      if in_str:
-        new_content.append(content[i])
-        continue
-
-      if content[i] in ('[', '{') and i + 2 < size and content[i + 1:i + 3] != ' \\':
-        tab_count += 1
-        new_content.append(content[i] + ' \\\n' + ' ' * tab_count * TAB_SIZE)
-      elif content[i] in (']', '}') and (i + 2 >= size or content[i + 1:i + 3] != ' \\'):
-        tab_count -= 1
-        new_content.append(' \\\n' + ' ' * tab_count * TAB_SIZE + content[i])
-      elif content[i] == ',' and i + 1 < size and content[i + 1] != '\n':
-        new_content.append(', \\\n' + ' ' * tab_count * TAB_SIZE)
-      else:
-        new_content.append(content[i])
+    if not to_original:
+      content = MainLogic(content)
 
     mcfile.seek(0)
-    mcfile.write(''.join(new_content))
+    mcfile.write(content)
+    mcfile.truncate()
+
+
+def CheckFileAndRun(file_name: str, to_original: bool) -> None:
+  if not os.path.isfile(file_name):
+    print(f'File {file_name} not found')
+    sys.exit(-1)
+
+  Format(file_name, to_original)
 
 
 def main():
-  if len(sys.argv) != 2:
-    print("Invalid argument count.")
+  if not 2 <= len(sys.argv) <= 3:
+    print("Invalid argument count")
     sys.exit(-1)
 
-  Format(sys.argv[1])
+  if len(sys.argv) == 3:
+    if sys.argv[1] not in ('--original', '-o'):
+      print('Invalid argument')
+      sys.exit(-1)
+
+    CheckFileAndRun(sys.argv[2], True)
+
+  else: # len(sys.argv) == 2
+    CheckFileAndRun(sys.argv[1], False)
 
 
 if __name__ == "__main__":

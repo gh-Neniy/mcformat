@@ -20,6 +20,7 @@ def main():
   zshrc_path = os.path.join(user_path, '.zshrc')
   if os.path.isfile(zshrc_path):
     Update(zshrc_path, '.zshrc')
+
   print('O\'key')
 
 
